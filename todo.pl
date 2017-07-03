@@ -20,14 +20,22 @@ option task => (
     is      => 'lazy',
     format  => 's',
     default => sub {
-        return unless @ARGV;
-        return ( @ARGV == 2 ) ? $ARGV[1] : $ARGV[0];
+        my $self = shift;
+        unless ($self->project) {
+            return join(' ', @ARGV);
+        }
+        return join(' ', @ARGV[1..$#ARGV]);
     }
 );
 option project => (
     is      => 'lazy',
     format  => 's',
-    default => sub { return unless ( @ARGV == 2 ); return $ARGV[0]; }
+    default => sub { 
+        return unless (@ARGV > 1);
+        return unless ( $ARGV[0] =~ /^[@#](?<project>\w+)$/);
+        return unless $+{project};
+        return $+{project};
+    }
 );
 has project_mapping => (
     is      => 'lazy',
