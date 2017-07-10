@@ -49,7 +49,7 @@ has project_mapping => (
 );
 option auth => ( is => 'ro' );
 
-has full_project_name => ( is => 'rw' );
+has full_project_name => ( is => 'rwp' );
 
 has project_id => (
     is      => 'lazy',
@@ -61,7 +61,7 @@ has project_id => (
         }
         for my $pname ( keys %{ $self->project_mapping } ) {
             if ( $pname =~ /^\Q$input\E/ ) {
-                $self->full_project_name($pname);
+                $self->_set_full_project_name($pname);
                 return $self->project_mapping->{$pname};
             }
         }
