@@ -49,6 +49,8 @@ has project_mapping => (
 );
 option auth => ( is => 'ro' );
 
+has full_project_name => ( is => 'rw' );
+
 has project_id => (
     is      => 'lazy',
     default => sub {
@@ -59,7 +61,7 @@ has project_id => (
         }
         for my $pname ( keys %{ $self->project_mapping } ) {
             if ( $pname =~ /^\Q$input\E/ ) {
-                warn "Fuzzy Adding to project $pname";
+                $self->full_project_name($pname);
                 return $self->project_mapping->{$pname};
             }
         }
@@ -123,7 +125,12 @@ sub add_task {
         }
     );
     return warn $p->error if ( $p->error );
-    warn "Task added";
+    if ( $self->full_project_name ) {
+        print "Task added for project " . $self->full_project_name . "\n";
+        return;
+    }
+
+    print "Task added\n";
 }
 
 sub authorize {
