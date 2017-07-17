@@ -123,6 +123,26 @@ has inverted_project_mapping => (
     }
 );
 
+sub _parse_projects {
+    my ( $self, $input ) = @_;
+    my $whitelist = {};
+    return unless @ARGV;
+    return unless ( $ARGV[0] =~ /^[@#](?<project>[\w,]+)$/ );
+    return unless $+{project};
+    my @projects = split( ',', lc($+{project}) );
+    return unless @projects;
+    for my $input (@projects) {
+
+        for my $pname ( keys %{ $self->project_mapping } ) {
+            if ( $pname =~ /^\Q$input\E/ ) {
+                $whitelist->{$pname} = 1;
+            }
+        }
+    }
+    return $whitelist;
+
+}
+
 sub access_token {
     shift->config->{access_token};
 }
@@ -132,13 +152,27 @@ sub run {
         $self->authorize;
     }
     if ( $self->list ) {
-        for my $item ( sort { $a->{project_id} <=> $b->{project_id} }
+        my $by_project;
+        my $project_whitelist = $self->_parse_projects;
+        for my $item ( 
             @{ $self->todo_items->{items} } )
         {
-            print $self->inverted_project_mapping->{ $item->{project_id} }
-              . ": "
-              . $item->{content} . "\n";
+            my $project_name = $self->inverted_project_mapping->{ $item->{project_id} };
+            next unless ($project_whitelist->{$project_name});
+            $by_project->{$project_name} //= [];
+            push @{$by_project->{$project_name}}, $item->{content};
         }
+        my $first_loop = 1 ;
+        for my $project ( sort keys(%$by_project) ) {
+            print "\n" unless ($first_loop);
+            $first_loop=0;
+
+            print "\@$project:\n";
+            for my $item ( @{ $by_project->{$project} } ) {
+                print "\t- $item\n";
+            }
+        }
+        exit;
     }
     if ( $self->task ) {
         return $self->add_task;
