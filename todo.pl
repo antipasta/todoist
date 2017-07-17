@@ -3,7 +3,7 @@ package runner;
 use strict;
 use warnings;
 use Moo;
-use MooX::Options;
+use MooX::Options protect_argv => 0;;
 use WWW::JSON;
 use URI;
 use Data::Dumper::Concise;
@@ -47,6 +47,15 @@ has project_mapping => (
               @{ $payload->res->{projects} } };
     }
 );
+has todo_items => (
+    is      => 'lazy',
+    default => sub {
+        my $self    = shift;
+        my $payload = $self->api->get( '/sync',
+            { sync_token => '*', resource_types => '["items"]' } );
+        return $payload->res;
+    }
+);
 option auth => ( is => 'ro' );
 
 has full_project_name => ( is => 'rwp' );
@@ -67,6 +76,10 @@ has project_id => (
         }
         die "Could not find matching project for " . $self->project;
     }
+);
+option list => (
+    is => 'ro',
+    required => 0
 );
 
 has api => (
@@ -98,6 +111,18 @@ sub save_config {
     YAML::Tiny::DumpFile( $self->config_file, $self->config );
 }
 
+has inverted_project_mapping => (
+    is      => 'lazy',
+    default => sub { my $self = shift; 
+        my $map = $self->project_mapping; 
+        for my $key (keys(%{$self->project_mapping})) {
+            my $val = $self->project_mapping->{$key};
+            $map->{$val} = $key;
+        }
+        return $map;
+    }
+);
+
 sub access_token {
     shift->config->{access_token};
 }
@@ -105,6 +130,11 @@ sub run {
     my $self = shift;
     unless ($self->access_token) {
         $self->authorize;
+    }
+    if ($self->list) {
+        for my $item (sort { $a->{project_id} <=> $b->{project_id} } @{$self->todo_items->{items}}) {
+            print $self->inverted_project_mapping->{$item->{project_id}} . ": " . $item->{content} . "\n";
+        }
     }
     if ( $self->task ) {
         return $self->add_task;
