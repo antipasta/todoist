@@ -128,12 +128,16 @@ sub access_token {
 }
 sub run {
     my $self = shift;
-    unless ($self->access_token) {
+    unless ( $self->access_token ) {
         $self->authorize;
     }
-    if ($self->list) {
-        for my $item (sort { $a->{project_id} <=> $b->{project_id} } @{$self->todo_items->{items}}) {
-            print $self->inverted_project_mapping->{$item->{project_id}} . ": " . $item->{content} . "\n";
+    if ( $self->list ) {
+        for my $item ( sort { $a->{project_id} <=> $b->{project_id} }
+            @{ $self->todo_items->{items} } )
+        {
+            print $self->inverted_project_mapping->{ $item->{project_id} }
+              . ": "
+              . $item->{content} . "\n";
         }
     }
     if ( $self->task ) {
