@@ -43,7 +43,7 @@ has project_mapping => (
         my $self    = shift;
         my $payload = $self->api->get( '/sync',
             { sync_token => '*', resource_types => '["projects"]' } );
-        return { map { lc( $_->{name} ) => $_->{id} }
+        return { map { $_->{name}  => $_->{id} }
               @{ $payload->res->{projects} } };
     }
 );
@@ -69,7 +69,7 @@ has project_id => (
             return $pid;
         }
         for my $pname ( keys %{ $self->project_mapping } ) {
-            if ( $pname =~ /^\Q$input\E/ ) {
+            if ( $pname =~ /^\Q$input\E/i ) {
                 $self->_set_full_project_name($pname);
                 return $self->project_mapping->{$pname};
             }
@@ -134,7 +134,7 @@ sub _parse_projects {
     for my $input (@projects) {
 
         for my $pname ( keys %{ $self->project_mapping } ) {
-            if ( $pname =~ /^\Q$input\E/ ) {
+            if ( $pname =~ /^\Q$input\E/i ) {
                 $whitelist->{$pname} = 1;
             }
         }
